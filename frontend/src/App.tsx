@@ -25,7 +25,7 @@ function App() {
 
   useEffect(() => {
     // Connect to WebSocket on mount
-    const ws = new WebSocket('ws://localhost:8000/ws/audio');
+    const ws = new WebSocket('wss://twocare-voice-agent-j63x.onrender.com/ws/audio');
     
     ws.onopen = () => {
       console.log("Connected to WebSocket");
@@ -101,7 +101,7 @@ function App() {
 
   const triggerOutbound = async () => {
     try {
-      await fetch('http://localhost:8000/outbound_call?patient_id=1', { method: 'POST' });
+      await fetch('https://twocare-voice-agent-j63x.onrender.com/outbound_call?patient_id=1', { method: 'POST' });
       setMessages(prev => [...prev, { role: 'agent', content: 'Outbound campaign triggered.' }]);
     } catch (err) {
       console.error(err);
