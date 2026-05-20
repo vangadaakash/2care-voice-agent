@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+websockets
+groq
+edge-tts
+pydub
+python-dotenv
+sqlalchemy
+fakeredis
