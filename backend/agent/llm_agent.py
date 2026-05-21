@@ -71,11 +71,31 @@ class Agent:
                 reply = response_message.content
                 import re
                 match = re.search(r'<function=([^>]+)>(.*?)</function>', reply, re.DOTALL)
-                if match:
-                    # Fallback for models leaking XML tool calls
-                    func_name = match.group(1)
+                
+                # Check if it returned raw JSON directly
+                json_tool = None
+                if not match:
                     try:
-                        func_args = json.loads(match.group(2))
+                        import json
+                        parsed = json.loads(reply.strip())
+                        if isinstance(parsed, dict) and parsed.get("type") == "function" and "name" in parsed:
+                            json_tool = parsed
+                    except Exception:
+                        pass
+
+                if match or json_tool:
+                    # Fallback for models leaking tool calls as text
+                    if match:
+                        func_name = match.group(1)
+                        try:
+                            func_args = json.loads(match.group(2))
+                        except:
+                            func_args = {}
+                    else:
+                        func_name = json_tool["name"]
+                        func_args = json_tool.get("parameters", {})
+                        
+                    try:
                         tool_result = execute_tool(func_name, func_args, self.patient_id)
                         
                         # Since it didn't use native tools, we feed the result back as a system observation
