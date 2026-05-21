@@ -81,7 +81,6 @@ class Agent:
                         json_str = reply[start_idx:end_idx+1]
                         if '"type"' in json_str and '"function"' in json_str:
                             try:
-                                import json
                                 parsed = json.loads(json_str)
                                 if isinstance(parsed, dict) and "name" in parsed:
                                     json_tool = parsed
