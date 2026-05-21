@@ -72,16 +72,20 @@ class Agent:
                 import re
                 match = re.search(r'<function=([^>]+)>(.*?)</function>', reply, re.DOTALL)
                 
-                # Check if it returned raw JSON directly
+                # Check if it returned raw JSON directly embedded in the text
                 json_tool = None
                 if not match:
-                    try:
-                        import json
-                        parsed = json.loads(reply.strip())
-                        if isinstance(parsed, dict) and parsed.get("type") == "function" and "name" in parsed:
-                            json_tool = parsed
-                    except Exception:
-                        pass
+                    json_match = re.search(r'(\{[\s\S]*"type"\s*:\s*"function"[\s\S]*?\})', reply)
+                    if json_match:
+                        try:
+                            import json
+                            parsed = json.loads(json_match.group(1))
+                            if isinstance(parsed, dict) and "name" in parsed:
+                                json_tool = parsed
+                                # Remove the raw JSON from the reply so the agent's response looks clean
+                                reply = reply.replace(json_match.group(1), "").strip()
+                        except Exception:
+                            pass
 
                 if match or json_tool:
                     # Fallback for models leaking tool calls as text
