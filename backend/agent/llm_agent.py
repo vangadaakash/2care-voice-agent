@@ -15,7 +15,7 @@ You have access to tools to manage the schedule.
 If the user wants to book, you need their preferred date, time, and doctor specialty. If they don't provide it, ask for it.
 When you use a tool, you must inform the user of the result.
 Keep responses very short and conversational.
-CRITICAL: You must use the native JSON tool calling mechanism. DO NOT output `<function>` tags in your text response under any circumstances.
+CRITICAL INSTRUCTION: You MUST use the native tool calling API. DO NOT EVER output raw JSON, JSON strings, or `<function>` tags in your conversational response. Just reply with human text, and let the tool-calling API handle the data.
 """
 
 class Agent:
@@ -75,17 +75,20 @@ class Agent:
                 # Check if it returned raw JSON directly embedded in the text
                 json_tool = None
                 if not match:
-                    json_match = re.search(r'(\{[\s\S]*"type"\s*:\s*"function"[\s\S]*?\})', reply)
-                    if json_match:
-                        try:
-                            import json
-                            parsed = json.loads(json_match.group(1))
-                            if isinstance(parsed, dict) and "name" in parsed:
-                                json_tool = parsed
-                                # Remove the raw JSON from the reply so the agent's response looks clean
-                                reply = reply.replace(json_match.group(1), "").strip()
-                        except Exception:
-                            pass
+                    start_idx = reply.find('{')
+                    end_idx = reply.rfind('}')
+                    if start_idx != -1 and end_idx != -1 and end_idx > start_idx:
+                        json_str = reply[start_idx:end_idx+1]
+                        if '"type"' in json_str and '"function"' in json_str:
+                            try:
+                                import json
+                                parsed = json.loads(json_str)
+                                if isinstance(parsed, dict) and "name" in parsed:
+                                    json_tool = parsed
+                                    # Remove the raw JSON from the reply so the agent's response looks clean
+                                    reply = reply.replace(json_str, "").strip()
+                            except Exception:
+                                pass
 
                 if match or json_tool:
                     # Fallback for models leaking tool calls as text
